@@ -7,11 +7,11 @@ import AuthProvider from "./AuthProvider";
 function Provider({ children }) {
   const convex = new ConvexReactClient(process.env.NEXT_PUBLIC_CONVEX_URL);
   return (
-    <Suspense fallback={<p>Loading...</p>}>
-      <ConvexProvider client={convex}>
+    <ConvexProvider client={convex}>
+      <Suspense fallback={<div>Loading...</div>}>
         <AuthProvider>{children}</AuthProvider>
-      </ConvexProvider>
-    </Suspense>
+      </Suspense>
+    </ConvexProvider>
   );
 }
 
