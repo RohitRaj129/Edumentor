@@ -39,70 +39,77 @@ function DiscussionRoom() {
 
   const connectToServer = async () => {
     setEnableMic(true);
-    //Init Assembly AI
-    realtimeTranscriber.current = new RealtimeTranscriber({
-      token: await getToken(),
-      sample_rate: 16_000,
-    });
-
-    realtimeTranscriber.current.on("transcript", async (transcript) => {
-      console.log(transcript);
-      let msg = "";
-
-      if (transcript.message_type == "FinalTranscript") {
-        setConversation((prev) => [
-          ...prev,
-          {
-            role: "user",
-            content: transcript.text,
-          },
-        ]);
-      }
-
-      texts[transcript.audio_start] = transcript?.texts;
-      const keys = Object.keys(texts);
-      keys.sort((a, b) => a - b);
-
-      for (const key of keys) {
-        if (texts[key]) {
-          msg += `${texts[key]}`;
-        }
-      }
-
-      setTranscribe(msg);
-    });
-
-    await realtimeTranscriber.current.connect();
 
     if (typeof window !== "undefined" && typeof navigator !== "undefined") {
       navigator.mediaDevices
         .getUserMedia({ audio: true })
-        .then((stream) => {
+        .then(async (stream) => {
           recorder.current = new RecordRTC(stream, {
             type: "audio",
-            MimeType: "audio/webm;codecs=pcm",
+            mimeType: "audio/webm",
             recorderType: RecordRTC.StereoAudioRecorder,
-            timeSlice: 250,
-            desiredOfAudioChannels: 1,
-            bufferSize: 4096,
-            audioBitsPerSecond: 128000,
-            ondataavailable: async (blob) => {
-              if (!realtimeTranscriber.current) return;
-              //Reset the silence detection timer on audio input
-              clearTimeout(silenceTimeout);
-              const buffer = await blob.arrayBuffer();
-              console.log(buffer);
-              realtimeTranscriber.current.sendAudio(buffer);
-              //Restart the silence detection timer
-              silenceTimeout = setTimeout(() => {
-                console.log("User Stopped talking");
-                //Handle user stopped talking (e.g., send final transcript, stop recording, etc.)
-              }, 2000);
-            },
           });
+
           recorder.current.startRecording();
+
+          const audioCtx = new AudioContext();
+          const source = audioCtx.createMediaStreamSource(stream);
+          const analyser = audioCtx.createAnalyser();
+          analyser.fftSize = 512;
+          source.connect(analyser);
+
+          const dataArray = new Uint8Array(analyser.frequencyBinCount);
+          let silenceStart = null;
+          const silenceDelay = 2000; // 2 seconds
+
+          const checkSilence = () => {
+            analyser.getByteFrequencyData(dataArray);
+            const average =
+              dataArray.reduce((a, b) => a + b, 0) / dataArray.length;
+
+            const now = Date.now();
+            if (average < 5) {
+              if (silenceStart === null) silenceStart = now;
+              else if (now - silenceStart > silenceDelay) {
+                recorder.current.stopRecording(async () => {
+                  const blob = recorder.current.getBlob();
+                  const form = new FormData();
+                  form.append("file", blob, "recording.webm");
+
+                  const res = await fetch("/api/transcribe", {
+                    method: "POST",
+                    body: form,
+                  });
+
+                  const data = await res.json();
+                  setTranscribe(data.text || "No result");
+
+                  setConversation((prev) => [
+                    ...(prev || []),
+                    {
+                      role: "user",
+                      content: data.text,
+                    },
+                  ]);
+
+                  stream.getTracks().forEach((t) => t.stop());
+                  recorder.current = null;
+                  setEnableMic(false);
+                });
+                return; // stop checking
+              }
+            } else {
+              silenceStart = null;
+            }
+
+            if (recorder.current) {
+              requestAnimationFrame(checkSilence);
+            }
+          };
+
+          checkSilence();
         })
-        .catch((err) => console.log(err));
+        .catch((err) => console.error(err));
     }
   };
 

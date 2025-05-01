@@ -16,7 +16,7 @@ function AuthProvider({ children }) {
 
   const CreateNewUser = async () => {
     const result = await CreateUser({
-      name: user?.displayName,
+      name: user?.displayName || user?.primaryEmail?.split("@")[0] || "User",
       email: user?.primaryEmail,
     });
     console.log(result);
