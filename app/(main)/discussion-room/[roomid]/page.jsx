@@ -1,8 +1,10 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
+import { getToken } from "@/services/GlobalServices";
 import { CoachingExpert } from "@/services/Options";
 import { UserButton } from "@stackframe/stack";
+import { RealtimeTranscriber } from "assemblyai";
 import { useQuery } from "convex/react";
 import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -19,6 +21,7 @@ function DiscussionRoom() {
   const [expert, setExpert] = useState();
   const [enableMic, setEnableMic] = useState(false);
   const recorder = useRef(null);
+  const realtimeTranscriber=useRef(null);
   let silenceTimeout;
 
   useEffect(() => {
@@ -31,8 +34,22 @@ function DiscussionRoom() {
     }
   }, [DiscussionRoomData]);
 
-  const connectToServer = () => {
+  const connectToServer = async() => {
     setEnableMic(true);
+
+    //Init AssemblyAi
+
+    realtimeTranscriber.current=new RealtimeTranscriber({
+      token:await getToken(),
+      sample_rate:16_000,
+    })
+
+    realtimeTranscriber.current.on('transcript',async(transcript)=>{
+      console.log(transcript);
+    })
+
+    await realtimeTranscriber.current.connect();
+
     if (typeof window !== "undefined" && typeof navigator !== "undefined") {
       navigator.mediaDevices
         .getUserMedia({ audio: true })
@@ -67,13 +84,30 @@ function DiscussionRoom() {
     }
   };
 
-  const diconnect = (e) => {
+  const diconnect = async(e) => {
     e.preventDefault();
-
+    await realtimeTranscriber.current.close()
     recorder.current.pauseRecording();
     recorder.current = null;
     setEnableMic(false);
   };
+
+  // const diconnect = async (e) => {
+  //   e.preventDefault();
+  
+  //   if (realtimeTranscriber.current) {
+  //     await realtimeTranscriber.current.close();
+  //     realtimeTranscriber.current = null;
+  //   }
+  
+  //   if (recorder.current) {
+  //     recorder.current.pauseRecording();
+  //     recorder.current = null;
+  //   }
+  
+  //   setEnableMic(false);
+  // };
+  
 
   return (
     <div className="-mt-10">
