@@ -1,10 +1,10 @@
-import axios from "axios";
+// import axios from "axios";
 import OpenAI from "openai";
 
-export const getToken = async () => {
-  const result = await axios.get("/api/getToken");
-  return result.data;
-};
+// export const getToken = async () => {
+//   const result = await axios.get("/api/getToken");
+//   return result.data;
+// };
 
 const openai = new OpenAI({
   baseURL: "https://openrouter.ai/api/v1",
@@ -12,7 +12,7 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
-export const AIModel = async (TouchpadIcon, coachingOptions, msg) => {
+export const AIModel = async (coachingOptions, msg) => {
   const option = CoachingOptions.find((item) => item.name == coachingOption);
   const PROMPT = option.prompt.replace("{user_topic}", topic);
 

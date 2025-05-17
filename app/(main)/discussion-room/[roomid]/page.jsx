@@ -23,8 +23,9 @@ function DiscussionRoom() {
   const [expert, setExpert] = useState();
   const [enableMic, setEnableMic] = useState(false);
   const [transcribe, setTranscribe] = useState();
-  const [conversation, setConversation] = useState();
+  const [conversation, setConversation] = useState([]);
   const [stream, setStream] = useState(null);
+  const [isLoading, setIsLoading] = useState(false);
   // const recorder = useRef(null);
   // const realtimeTranscriber = useRef(null);
   // let silenceTimeout;
@@ -32,6 +33,9 @@ function DiscussionRoom() {
 
   const textsRef = useRef({});
   const msgRef = useRef("");
+  const [msg, setMsg] = useState("");
+  const liveTranscriptRef = useRef("");
+  const lastFinalTranscriptRef = useRef("");
 
   const {
     transcript,
@@ -49,6 +53,54 @@ function DiscussionRoom() {
       setExpert(Expert);
     }
   }, [DiscussionRoomData]);
+
+  const processUserSpeech = async (speechText) => {
+    if (!speechText.trim()) return;
+
+    // Add user message to conversation
+    const userMessage = { role: "user", content: speechText.trim() };
+    setConversation((prev) => [...(prev || []), userMessage]);
+
+    // Set loading state while waiting for AI response
+    setIsLoading(true);
+
+    try {
+      // Send to AI model
+      const response = await fetch("/api/transcribe", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt: speechText.trim() }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to get AI response");
+      }
+
+      const data = await response.json();
+
+      // Add AI response to conversation
+      const aiMessage = {
+        role: "assistant",
+        content: data.response || data.text || "I didn't understand that",
+      };
+      setConversation((prev) => [...prev, aiMessage]);
+
+      // Optionally, you could implement text-to-speech here to speak the AI response
+    } catch (error) {
+      console.error("Error processing speech:", error);
+      setConversation((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Sorry, I encountered an error processing your request.",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const connectToServer = async () => {
     if (window.isListening) return;
@@ -74,12 +126,39 @@ function DiscussionRoom() {
 
           const monitorSilence = () => {
             clearTimeout(silenceTimer);
-            silenceTimer = setTimeout(() => {
+            silenceTimer = setTimeout(async () => {
               SpeechRecognition.stopListening();
+
+              const waitForFinal = () =>
+                new Promise((res) => setTimeout(res, 300)); // allow transcript to settle
+              await waitForFinal();
+
+              const finalTranscript = liveTranscriptRef.current.trim();
+
+              console.log("⏸️ Detected Silence");
+              if (
+                finalTranscript &&
+                finalTranscript !== lastFinalTranscriptRef.current
+              ) {
+                console.log("🎤 FINAL TRANSCRIPT:", finalTranscript);
+                setTranscribe(finalTranscript);
+                msgRef.current += finalTranscript + " ";
+                setMsg(msgRef.current.trim());
+                console.log("📌 Updated Message:", msgRef.current.trim());
+                lastFinalTranscriptRef.current = finalTranscript;
+                // await processUserSpeech(finalTranscript); // Disabled
+              } else {
+                console.log("⚠️ No new speech detected.");
+              }
+
+              resetTranscript();
               resolve();
+
               setTimeout(() => {
-                SpeechRecognition.startListening({ continuous: true });
-              }, 500); // slight delay before restarting
+                if (window.isListening) {
+                  SpeechRecognition.startListening({ continuous: true });
+                }
+              }, 500);
             }, silenceDelay);
           };
 
@@ -88,6 +167,7 @@ function DiscussionRoom() {
           navigator.mediaDevices
             .getUserMedia({ audio: true })
             .then((stream) => {
+              setStream(stream);
               const source = audioContext.createMediaStreamSource(stream);
               const analyser = audioContext.createAnalyser();
               analyser.fftSize = 2048;
@@ -115,63 +195,6 @@ function DiscussionRoom() {
               checkForSound();
             });
         });
-
-        if (transcript.trim()) {
-          console.log("Final Transcript:", transcript);
-          setTranscribe(transcript);
-
-          // Save to texts and generate message
-          const timestamp = Date.now();
-          textsRef.current[timestamp] = transcript;
-
-          const keys = Object.keys(textsRef.current).sort((a, b) => a - b);
-          msgRef.current = "";
-          for (const key of keys) {
-            if (textsRef.current[key]) {
-              msgRef.current += textsRef.current[key] + " ";
-            }
-          }
-
-          console.log("Collected Message:", msgRef.current);
-          setConversation((prev) => [
-            ...(prev || []),
-            { role: "user", content: msgRef.current.trim() },
-          ]);
-
-          console.log("Sending Prompt to AI:", msgRef.current);
-
-          fetch("/api/transcribe", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ prompt: msgRef.current }),
-          })
-            .then((res) => res.json())
-            .then((data) => {
-              console.log("AI response:", data);
-            })
-            .catch((err) => {
-              console.error("Error sending prompt:", err);
-            });
-
-          // fetch("/api/transcribe", {
-          //   method: "POST",
-          //   headers: {
-          //     "Content-Type": "application/json",
-          //   },
-          //   body: JSON.stringify({ prompt: transcript }),
-          // })
-          //   .then((res) => res.json())
-          //   .then((data) => {
-          //     console.log("AI response:", data);
-          //   })
-          //   .catch((err) => {
-          //     console.error("Error sending prompt:", err);
-          //   });
-        }
-
-        resetTranscript();
       }
     };
 
@@ -181,31 +204,22 @@ function DiscussionRoom() {
   const diconnect = async (e) => {
     e.preventDefault();
 
-    SpeechRecognition.stopListening();
     window.isListening = false;
     setEnableMic(false);
-
-    if (transcript.trim()) {
-      const timestamp = Date.now();
-      textsRef.current[timestamp] = transcript;
-
-      const keys = Object.keys(textsRef.current).sort((a, b) => a - b);
-      msgRef.current = "";
-      for (const key of keys) {
-        if (textsRef.current[key]) {
-          msgRef.current += textsRef.current[key] + " ";
-        }
-      }
-    }
-
+    SpeechRecognition.stopListening();
     resetTranscript();
 
-    console.log("Final message after disconnect:", msgRef.current.trim());
+    if (stream) {
+      stream.getTracks().forEach((track) => track.stop());
+    }
+
+    console.log("Disconnected. Mic stopped.");
   };
 
   useEffect(() => {
     if (transcript) {
       console.log("Transcript:", transcript);
+      liveTranscriptRef.current = transcript;
     }
   }, [transcript]);
 
@@ -240,8 +254,28 @@ function DiscussionRoom() {
           </div>
         </div>
         <div>
-          <div className="h-[60vh] bg-secondary border rounded-4xl flex flex-col items-center justify-center relative">
-            <h2>Chat Section</h2>
+          <div className="h-[60vh] bg-secondary border rounded-4xl p-4 overflow-y-auto">
+            <h2 className="text-center mb-4">Chat Section</h2>
+            <div className="flex flex-col space-y-4">
+              {conversation &&
+                conversation.map((message, index) => (
+                  <div
+                    key={index}
+                    className={`p-3 rounded-lg max-w-3/4 ${
+                      message.role === "user"
+                        ? "bg-blue-100 self-end"
+                        : "bg-gray-100 self-start"
+                    }`}
+                  >
+                    {message.content}
+                  </div>
+                ))}
+              {isLoading && (
+                <div className="self-start bg-gray-100 p-3 rounded-lg">
+                  <span className="animate-pulse">Thinking...</span>
+                </div>
+              )}
+            </div>
           </div>
           <h2 className="mt-4 text-gray-400 text-sm">
             At the end of your conversation we will automatically generate
