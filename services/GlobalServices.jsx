@@ -1,5 +1,6 @@
 // import axios from "axios";
 import OpenAI from "openai";
+import { CoachingOptions } from "./Options";
 
 // export const getToken = async () => {
 //   const result = await axios.get("/api/getToken");
@@ -12,12 +13,15 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
-export const AIModel = async (coachingOptions, msg) => {
-  const option = CoachingOptions.find((item) => item.name == coachingOption);
+export const AIModel = async (topic, coachingOption, msg) => {
+  const option = CoachingOptions.find((item) => item.name === coachingOption);
   const PROMPT = option.prompt.replace("{user_topic}", topic);
 
-  const completion = await openai.chat.completion.create({
-    model: "google/gemini-2.0-flash-exp:free",
+  const completion = await openai.chat.completions.create({
+    // model: "deepseek/deepseek-chat-v3-0324:free",
+    // model: "google/gemini-2.0-flash-exp:free",
+    model: "openai/gpt-3.5-turbo",
+    // model: "openrouter/gemini-2.0-flash-exp:free",
     messages: [
       { role: "assistant", content: PROMPT },
       { role: "user", content: msg },

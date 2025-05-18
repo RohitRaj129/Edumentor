@@ -1,10 +1,13 @@
 "use client";
+import Loading from "@/app/loading";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
+import { AIModel } from "@/services/GlobalServices";
 // import { getToken } from "@/services/GlobalServices";
 import { CoachingExpert } from "@/services/Options";
 import { UserButton } from "@stackframe/stack";
 import { useQuery } from "convex/react";
+import { Loader2Icon } from "lucide-react";
 // import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useParams } from "next/navigation";
@@ -26,10 +29,6 @@ function DiscussionRoom() {
   const [conversation, setConversation] = useState([]);
   const [stream, setStream] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
-  // const recorder = useRef(null);
-  // const realtimeTranscriber = useRef(null);
-  // let silenceTimeout;
-  // let texts;
 
   const textsRef = useRef({});
   const msgRef = useRef("");
@@ -54,55 +53,8 @@ function DiscussionRoom() {
     }
   }, [DiscussionRoomData]);
 
-  const processUserSpeech = async (speechText) => {
-    if (!speechText.trim()) return;
-
-    // Add user message to conversation
-    const userMessage = { role: "user", content: speechText.trim() };
-    setConversation((prev) => [...(prev || []), userMessage]);
-
-    // Set loading state while waiting for AI response
-    setIsLoading(true);
-
-    try {
-      // Send to AI model
-      const response = await fetch("/api/transcribe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt: speechText.trim() }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to get AI response");
-      }
-
-      const data = await response.json();
-
-      // Add AI response to conversation
-      const aiMessage = {
-        role: "assistant",
-        content: data.response || data.text || "I didn't understand that",
-      };
-      setConversation((prev) => [...prev, aiMessage]);
-
-      // Optionally, you could implement text-to-speech here to speak the AI response
-    } catch (error) {
-      console.error("Error processing speech:", error);
-      setConversation((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Sorry, I encountered an error processing your request.",
-        },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   const connectToServer = async () => {
+    // setIsLoading(true);
     if (window.isListening) return;
     if (!browserSupportsSpeechRecognition) {
       alert("Browser does not support speech recognition.");
@@ -140,7 +92,25 @@ function DiscussionRoom() {
                 finalTranscript &&
                 finalTranscript !== lastFinalTranscriptRef.current
               ) {
+                setConversation((prev) => [
+                  ...prev,
+                  {
+                    role: "user",
+                    content: finalTranscript,
+                  },
+                ]);
                 console.log("🎤 FINAL TRANSCRIPT:", finalTranscript);
+
+                //calling AI text model to get response
+
+                const aiResp = await AIModel(
+                  DiscussionRoomData.topic,
+                  DiscussionRoomData.coachingOption,
+                  finalTranscript
+                );
+
+                console.log("AI Response:", aiResp);
+
                 setTranscribe(finalTranscript);
                 msgRef.current += finalTranscript + " ";
                 setMsg(msgRef.current.trim());
@@ -203,7 +173,7 @@ function DiscussionRoom() {
 
   const diconnect = async (e) => {
     e.preventDefault();
-
+    // setIsLoading(true);
     window.isListening = false;
     setEnableMic(false);
     SpeechRecognition.stopListening();
@@ -212,7 +182,6 @@ function DiscussionRoom() {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
     }
-
     console.log("Disconnected. Mic stopped.");
   };
 
@@ -245,9 +214,16 @@ function DiscussionRoom() {
           </div>
           <div className="mt-5 flex items-center justify-center">
             {!enableMic ? (
-              <Button onClick={connectToServer}>Connect</Button>
+              <Button onClick={connectToServer} disabled={isLoading}>
+                {isLoading && <Loader2Icon className="animate-spin" />}Connect
+              </Button>
             ) : (
-              <Button variant="destructive" onClick={diconnect}>
+              <Button
+                variant="destructive"
+                onClick={diconnect}
+                disabled={isLoading}
+              >
+                {isLoading && <Loader2Icon className="animate-spin" />}
                 Disconnect
               </Button>
             )}
