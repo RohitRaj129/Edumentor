@@ -27,16 +27,7 @@ function DiscussionRoom() {
   const [expert, setExpert] = useState();
   const [enableMic, setEnableMic] = useState(false);
   const [transcribe, setTranscribe] = useState();
-  const [conversation, setConversation] = useState([
-    {
-      role: "assistant",
-      content: `Hello! I am your AI assistant. How can I help you today?`,
-    },
-    {
-      role: "user",
-      content: `Hello!`,
-    },
-  ]);
+  const [conversation, setConversation] = useState([]);
   const [stream, setStream] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -248,8 +239,7 @@ function DiscussionRoom() {
               <Button
                 variant="destructive"
                 onClick={diconnect}
-                disabled={isLoading}
-              >
+                disabled={isLoading}>
                 {isLoading && <Loader2Icon className="animate-spin" />}
                 Disconnect
               </Button>

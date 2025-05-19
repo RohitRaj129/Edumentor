@@ -18,7 +18,7 @@ export const AIModel = async (topic, coachingOption, userInput, history) => {
   const systemPrompt = option.prompt.replace("{user_topic}", topic);
 
   if (history.length === 0) {
-    history.push({ role: "system", content: systemPrompt });
+    history.push({ role: "assistant", content: systemPrompt });
   }
 
   history.push({ role: "user", content: userInput });
