@@ -15,6 +15,7 @@ import React, { useEffect, useRef, useState } from "react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
+import ChatBox from "./_components/ChatBox";
 // const RecordRTC = dynamic(() => import("recordrtc"), { ssr: false });
 // import RecordRTC from "recordrtc";
 
@@ -26,7 +27,16 @@ function DiscussionRoom() {
   const [expert, setExpert] = useState();
   const [enableMic, setEnableMic] = useState(false);
   const [transcribe, setTranscribe] = useState();
-  const [conversation, setConversation] = useState([]);
+  const [conversation, setConversation] = useState([
+    {
+      role: "assistant",
+      content: `Hello! I am your AI assistant. How can I help you today?`,
+    },
+    {
+      role: "user",
+      content: `Hello!`,
+    },
+  ]);
   const [stream, setStream] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -107,6 +117,13 @@ function DiscussionRoom() {
               ) {
                 console.log("🎤 FINAL TRANSCRIPT:", finalTranscript);
 
+                setConversation((prev) => [
+                  ...prev,
+                  {
+                    role: "user",
+                    content: finalTranscript,
+                  },
+                ]);
                 //calling AI text model to get response
 
                 const aiResp = await AIModel(
@@ -116,6 +133,7 @@ function DiscussionRoom() {
                   chatHistoryRef.current
                 );
 
+                setConversation((prev) => [...prev, aiResp]);
                 console.log("AI Response:", aiResp);
 
                 setTranscribe(finalTranscript);
@@ -239,13 +257,7 @@ function DiscussionRoom() {
           </div>
         </div>
         <div>
-          <div className="h-[60vh] bg-secondary border rounded-4xl p-4 overflow-y-auto">
-            <h2 className="text-center mb-4">Chat Section</h2>
-          </div>
-          <h2 className="mt-4 text-gray-400 text-sm">
-            At the end of your conversation we will automatically generate
-            feedback/notes from your conversation.
-          </h2>
+          <ChatBox conversation={conversation} />
         </div>
       </div>
       <div>
