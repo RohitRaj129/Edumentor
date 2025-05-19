@@ -35,6 +35,8 @@ function DiscussionRoom() {
   const [msg, setMsg] = useState("");
   const liveTranscriptRef = useRef("");
   const lastFinalTranscriptRef = useRef("");
+  const isProcessingRef = useRef(false);
+  const chatHistoryRef = useRef([]);
 
   const {
     transcript,
@@ -82,23 +84,27 @@ function DiscussionRoom() {
               SpeechRecognition.stopListening();
 
               const waitForFinal = () =>
-                new Promise((res) => setTimeout(res, 300)); // allow transcript to settle
+                new Promise((res) => setTimeout(res, 250)); // allow transcript to settle
               await waitForFinal();
 
               const finalTranscript = liveTranscriptRef.current.trim();
 
               console.log("⏸️ Detected Silence");
+              const normalizedTranscript = finalTranscript.toLowerCase().trim();
+              const lastTranscript = lastFinalTranscriptRef.current
+                .toLowerCase()
+                .trim();
+
+              if (isProcessingRef.current) {
+                console.log("⏳ Already processing... Skipping.");
+                return;
+              }
+              isProcessingRef.current = true;
+
               if (
-                finalTranscript &&
-                finalTranscript !== lastFinalTranscriptRef.current
+                normalizedTranscript &&
+                normalizedTranscript !== lastTranscript
               ) {
-                setConversation((prev) => [
-                  ...prev,
-                  {
-                    role: "user",
-                    content: finalTranscript,
-                  },
-                ]);
                 console.log("🎤 FINAL TRANSCRIPT:", finalTranscript);
 
                 //calling AI text model to get response
@@ -106,7 +112,8 @@ function DiscussionRoom() {
                 const aiResp = await AIModel(
                   DiscussionRoomData.topic,
                   DiscussionRoomData.coachingOption,
-                  finalTranscript
+                  finalTranscript,
+                  chatHistoryRef.current
                 );
 
                 console.log("AI Response:", aiResp);
@@ -115,10 +122,12 @@ function DiscussionRoom() {
                 msgRef.current += finalTranscript + " ";
                 setMsg(msgRef.current.trim());
                 console.log("📌 Updated Message:", msgRef.current.trim());
-                lastFinalTranscriptRef.current = finalTranscript;
+                lastFinalTranscriptRef.current = normalizedTranscript;
                 // await processUserSpeech(finalTranscript); // Disabled
+                isProcessingRef.current = false;
               } else {
                 console.log("⚠️ No new speech detected.");
+                isProcessingRef.current = false;
               }
 
               resetTranscript();
@@ -232,26 +241,6 @@ function DiscussionRoom() {
         <div>
           <div className="h-[60vh] bg-secondary border rounded-4xl p-4 overflow-y-auto">
             <h2 className="text-center mb-4">Chat Section</h2>
-            <div className="flex flex-col space-y-4">
-              {conversation &&
-                conversation.map((message, index) => (
-                  <div
-                    key={index}
-                    className={`p-3 rounded-lg max-w-3/4 ${
-                      message.role === "user"
-                        ? "bg-blue-100 self-end"
-                        : "bg-gray-100 self-start"
-                    }`}
-                  >
-                    {message.content}
-                  </div>
-                ))}
-              {isLoading && (
-                <div className="self-start bg-gray-100 p-3 rounded-lg">
-                  <span className="animate-pulse">Thinking...</span>
-                </div>
-              )}
-            </div>
           </div>
           <h2 className="mt-4 text-gray-400 text-sm">
             At the end of your conversation we will automatically generate

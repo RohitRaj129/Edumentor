@@ -13,20 +13,23 @@ const openai = new OpenAI({
   dangerouslyAllowBrowser: true,
 });
 
-export const AIModel = async (topic, coachingOption, msg) => {
+export const AIModel = async (topic, coachingOption, userInput, history) => {
   const option = CoachingOptions.find((item) => item.name === coachingOption);
-  const PROMPT = option.prompt.replace("{user_topic}", topic);
+  const systemPrompt = option.prompt.replace("{user_topic}", topic);
+
+  if (history.length === 0) {
+    history.push({ role: "system", content: systemPrompt });
+  }
+
+  history.push({ role: "user", content: userInput });
 
   const completion = await openai.chat.completions.create({
-    // model: "deepseek/deepseek-chat-v3-0324:free",
-    // model: "google/gemini-2.0-flash-exp:free",
     model: "openai/gpt-3.5-turbo",
-    // model: "openrouter/gemini-2.0-flash-exp:free",
-    messages: [
-      { role: "assistant", content: PROMPT },
-      { role: "user", content: msg },
-    ],
+    messages: history,
   });
-  console.log(completion.choices[0].message);
-  return completion.choices[0].message;
+
+  const aiMessage = completion.choices[0].message;
+  history.push(aiMessage);
+
+  return aiMessage;
 };
