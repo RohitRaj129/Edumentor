@@ -1,6 +1,43 @@
 // import axios from "axios";
 import OpenAI from "openai";
 import { CoachingOptions } from "./Options";
+// import { ElevenLabsClient } from "elevenlabs";
+
+// const elevenlabs = new ElevenLabsClient({
+//   apiKey: process.env.ELEVENLABS_API_KEY,
+// });
+
+// export async function POST(req) {
+//   const { text } = await req.json();
+
+//   const audioStream = await elevenlabs.textToSpeech.stream(
+//     "JBFqnCBsd6RMkjVDRZzb",
+//     {
+//       model_id: "eleven_multilingual_v2",
+//       text,
+//       output_format: "mp3_44100_128",
+//       voice_settings: {
+//         stability: 0,
+//         similarity_boost: 1.0,
+//         use_speaker_boost: true,
+//         speed: 1.0,
+//       },
+//     }
+//   );
+
+//   const chunks = [];
+//   for await (const chunk of audioStream) {
+//     chunks.push(chunk);
+//   }
+
+//   const content = Buffer.concat(chunks);
+
+//   return new Response(content, {
+//     headers: {
+//       "Content-Type": "audio/mpeg",
+//     },
+//   });
+// }
 
 // export const getToken = async () => {
 //   const result = await axios.get("/api/getToken");

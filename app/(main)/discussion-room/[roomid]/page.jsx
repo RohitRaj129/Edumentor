@@ -123,6 +123,7 @@ function DiscussionRoom() {
                   finalTranscript,
                   chatHistoryRef.current
                 );
+                // await createAudioStreamFromText(aiResp);
 
                 setConversation((prev) => [...prev, aiResp]);
                 console.log("AI Response:", aiResp);
