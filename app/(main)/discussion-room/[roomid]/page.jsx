@@ -1,5 +1,5 @@
 "use client";
-import Loading from "@/app/loading";
+// import Loading from "@/app/loading";
 import { Button } from "@/components/ui/button";
 import { api } from "@/convex/_generated/api";
 import { AIModel } from "@/services/GlobalServices";
@@ -11,17 +11,20 @@ import { Loader2Icon } from "lucide-react";
 // import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useParams } from "next/navigation";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
 import ChatBox from "./_components/ChatBox";
 import { toast } from "sonner";
+import { UserContext } from "@/app/_context/UserContext";
+// import { set } from "@elevenlabs/elevenlabs-js/core/schemas";
 // const RecordRTC = dynamic(() => import("recordrtc"), { ssr: false });
 // import RecordRTC from "recordrtc";
 
 function DiscussionRoom() {
   const { roomid } = useParams();
+  const { userData, setUserData } = useContext(UserContext);
   const DiscussionRoomData = useQuery(api.DiscussionRoom.GetDiscussionRoom, {
     id: roomid,
   });
@@ -33,6 +36,7 @@ function DiscussionRoom() {
   const [isLoading, setIsLoading] = useState(false);
   const [enableFeedbackNotes, setEnableFeedbackNotes] = useState(false);
   const UpdateConversation = useMutation(api.DiscussionRoom.UpdateConversation);
+  const updateUserTokken = useMutation(api.users.UpdateUserTokken);
 
   const textsRef = useRef({});
   const msgRef = useRef("");
@@ -119,6 +123,8 @@ function DiscussionRoom() {
                     content: finalTranscript,
                   },
                 ]);
+
+                await updateUserTokkenMethod(finalTranscript);
                 //calling AI text model to get response
 
                 const aiResp = await AIModel(
@@ -131,6 +137,7 @@ function DiscussionRoom() {
 
                 setConversation((prev) => [...prev, aiResp]);
                 console.log("AI Response:", aiResp);
+                await updateUserTokkenMethod(aiResp.content);
 
                 setTranscribe(finalTranscript);
                 msgRef.current += finalTranscript + " ";
@@ -212,6 +219,18 @@ function DiscussionRoom() {
     });
     setEnableFeedbackNotes(true);
     console.log("Disconnected. Mic stopped.");
+  };
+
+  const updateUserTokkenMethod = async (text) => {
+    const tokkenCount = text.trim() ? text.trim().split(/\s+/).length : 0;
+    const result = await updateUserTokken({
+      id: userData._id,
+      credits: Number(userData.credits) - Number(tokkenCount),
+    });
+    setUserData((prev) => ({
+      ...prev,
+      credits: Number(userData.credits) - Number(tokkenCount),
+    }));
   };
 
   useEffect(() => {

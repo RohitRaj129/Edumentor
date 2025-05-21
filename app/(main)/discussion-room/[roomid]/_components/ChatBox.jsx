@@ -54,8 +54,8 @@ function ChatBox({ conversation, enableFeedbackNotes, coachingOption }) {
       </div>
       {!enableFeedbackNotes ? (
         <h2 className="mt-4 text-gray-400 text-sm">
-          At the end of your conversation we will automatically generate
-          feedback/notes from your conversation.
+          {/* At the end of your conversation we will automatically generate
+          feedback/notes from your conversation. */}
         </h2>
       ) : (
         <Button
