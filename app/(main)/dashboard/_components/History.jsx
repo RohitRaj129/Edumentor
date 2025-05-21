@@ -43,8 +43,7 @@ function History() {
       <div>
         {discussionRoomList.map(
           (item, index) =>
-            (item.coachingOption =
-              "Topic Base Lecture" ||
+            (item.coachingOption == "Topic Base Lecture" ||
               item.coachingOption == "Learn Language" ||
               item.coachingOption == "Meditation") && (
               <div

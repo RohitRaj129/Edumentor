@@ -38,13 +38,13 @@ function Feedback() {
     <div>
       <h2 className="font-bold text-xl">Feedbacks</h2>
       {discussionRoomList?.length == 0 && (
-        <h2 className="text-gray-400">You don't have any previous lectures</h2>
+        <h2 className="text-gray-400">You don't have any previous Feedback</h2>
       )}
       <div>
         {discussionRoomList.map(
           (item, index) =>
-            (item.coachingOption =
-              "Mock Interview" || item.coachingOption == "Ques Ans Prep") && (
+            (item.coachingOption == "Mock Interview" ||
+              item.coachingOption == "Ques Ans Prep") && (
               <div
                 key={index}
                 className="border-b-[1px] pb-3 mb-4 group flex justify-between items-center cursor-pointer"
@@ -69,7 +69,7 @@ function Feedback() {
                   variant="outline"
                   className="invisible group-hover:visible"
                 >
-                  View Notes
+                  View Feedback
                 </Button>
               </div>
             )
