@@ -6,7 +6,7 @@ import { AIModel } from "@/services/GlobalServices";
 // import { getToken } from "@/services/GlobalServices";
 import { CoachingExpert } from "@/services/Options";
 import { UserButton } from "@stackframe/stack";
-import { useQuery } from "convex/react";
+import { useMutation, useQuery } from "convex/react";
 import { Loader2Icon } from "lucide-react";
 // import dynamic from "next/dynamic";
 import Image from "next/image";
@@ -16,6 +16,7 @@ import SpeechRecognition, {
   useSpeechRecognition,
 } from "react-speech-recognition";
 import ChatBox from "./_components/ChatBox";
+import { toast } from "sonner";
 // const RecordRTC = dynamic(() => import("recordrtc"), { ssr: false });
 // import RecordRTC from "recordrtc";
 
@@ -30,6 +31,8 @@ function DiscussionRoom() {
   const [conversation, setConversation] = useState([]);
   const [stream, setStream] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [enableFeedbackNotes, setEnableFeedbackNotes] = useState(false);
+  const UpdateConversation = useMutation(api.DiscussionRoom.UpdateConversation);
 
   const textsRef = useRef({});
   const msgRef = useRef("");
@@ -58,6 +61,7 @@ function DiscussionRoom() {
 
   const connectToServer = async () => {
     // setIsLoading(true);
+    toast("Connected to server");
     if (window.isListening) return;
     if (!browserSupportsSpeechRecognition) {
       alert("Browser does not support speech recognition.");
@@ -192,6 +196,7 @@ function DiscussionRoom() {
 
   const diconnect = async (e) => {
     e.preventDefault();
+    toast("Disconnected from server");
     // setIsLoading(true);
     window.isListening = false;
     setEnableMic(false);
@@ -201,6 +206,11 @@ function DiscussionRoom() {
     if (stream) {
       stream.getTracks().forEach((track) => track.stop());
     }
+    await UpdateConversation({
+      id: DiscussionRoomData._id,
+      conversation: conversation,
+    });
+    setEnableFeedbackNotes(true);
     console.log("Disconnected. Mic stopped.");
   };
 
@@ -228,7 +238,7 @@ function DiscussionRoom() {
             />
             <h2 className="text-gray-500">{expert?.name} </h2>
             <div className="p-5 bg-gray-200 px-10 rounded-lg absolute bottom-10 right-10">
-              <UserButton />
+              <UserButton disabled />
             </div>
           </div>
           <div className="mt-5 flex items-center justify-center">
@@ -240,7 +250,8 @@ function DiscussionRoom() {
               <Button
                 variant="destructive"
                 onClick={diconnect}
-                disabled={isLoading}>
+                disabled={isLoading}
+              >
                 {isLoading && <Loader2Icon className="animate-spin" />}
                 Disconnect
               </Button>
@@ -248,7 +259,11 @@ function DiscussionRoom() {
           </div>
         </div>
         <div>
-          <ChatBox conversation={conversation} />
+          <ChatBox
+            conversation={conversation}
+            enableFeedbackNotes={enableFeedbackNotes}
+            coachingOption={DiscussionRoomData?.coachingOption}
+          />
         </div>
       </div>
       <div>

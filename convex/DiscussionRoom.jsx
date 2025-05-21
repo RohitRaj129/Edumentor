@@ -25,3 +25,26 @@ export const GetDiscussionRoom = query({
     return result;
   },
 });
+
+export const UpdateConversation = mutation({
+  args: {
+    id: v.id("DiscussionRoom"),
+    conversation: v.any(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      conversation: args.conversation,
+    });
+  },
+});
+export const UpdateSummary = mutation({
+  args: {
+    id: v.id("DiscussionRoom"),
+    summary: v.any(),
+  },
+  handler: async (ctx, args) => {
+    await ctx.db.patch(args.id, {
+      summary: args.summary,
+    });
+  },
+});

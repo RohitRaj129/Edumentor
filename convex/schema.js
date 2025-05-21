@@ -14,5 +14,6 @@ export default defineSchema({
     topic: v.string(),
     expertName: v.string(),
     conversation: v.optional(v.any()),
+    summary: v.optional(v.any()),
   }),
 });

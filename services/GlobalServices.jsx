@@ -70,3 +70,27 @@ export const AIModel = async (topic, coachingOption, userInput, history) => {
 
   return aiMessage;
 };
+
+export const AIModelToGenerateFeedbackAndNotes = async (
+  coachingOption,
+  conversation
+) => {
+  const option = CoachingOptions.find((item) => item.name === coachingOption);
+  const systemPrompt = option.summeryPrompt;
+
+  // if (history.length === 0) {
+  //   history.push({ role: "assistant", content: systemPrompt });
+  // }
+
+  // history.push({ role: "user", content: userInput });
+
+  const completion = await openai.chat.completions.create({
+    model: "openai/gpt-3.5-turbo",
+    messages: [...conversation, { role: "assistant", content: systemPrompt }],
+  });
+
+  const aiMessage = completion.choices[0].message;
+  // history.push(aiMessage);
+
+  return aiMessage;
+};
