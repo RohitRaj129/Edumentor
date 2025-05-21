@@ -4,19 +4,27 @@ import { Button } from "@/components/ui/button";
 import { CoachingOptions } from "@/services/Options";
 import { useUser } from "@stackframe/stack";
 import Image from "next/image";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import UserInputDialog from "./UserInputDialog";
 import ProfileDialog from "./ProfileDialog";
 
 function FeatureAssistants() {
   const user = useUser();
+  const [username, setUsername] = useState("");
+
+  useEffect(() => {
+    if (user?.displayName) {
+      setUsername(user.displayName);
+    }
+  }, [user]);
+
   return (
     <div>
       <div className="flex justify-between items-center">
         <div>
           <h2 className="font-medium text-gray-500">My Workspace</h2>
           <h2 className="text-3xl font-bold">
-            Welcome back, {user?.displayName}
+            Welcome back{username ? `, ${username}` : ""}
           </h2>
         </div>
         <ProfileDialog>

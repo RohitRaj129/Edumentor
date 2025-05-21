@@ -54,12 +54,18 @@ function DiscussionRoom() {
   } = useSpeechRecognition();
 
   useEffect(() => {
-    if (DiscussionRoomData) {
+    if (DiscussionRoomData && DiscussionRoomData.expertName) {
       const Expert = CoachingExpert.find(
-        (item) => item.name == DiscussionRoomData.expertName
+        (item) => item.name === DiscussionRoomData.expertName
       );
-      console.log(Expert);
-      setExpert(Expert);
+      console.log("Found expert:", Expert);
+      if (Expert) {
+        setExpert(Expert);
+      } else {
+        // If no matching expert is found, set a default one
+        console.log("No matching expert found, using default");
+        setExpert(CoachingExpert[0]);
+      }
     }
   }, [DiscussionRoomData]);
 
@@ -203,6 +209,7 @@ function DiscussionRoom() {
 
   const diconnect = async (e) => {
     e.preventDefault();
+
     toast("Disconnected from server");
     // setIsLoading(true);
     window.isListening = false;
@@ -248,14 +255,18 @@ function DiscussionRoom() {
       <div className="mt-5 grid grid-cols-1 lg:grid-cols-3 gap-10">
         <div className="lg:col-span-2 ">
           <div className="h-[60vh] bg-secondary border rounded-4xl flex flex-col items-center justify-center relative">
-            <Image
-              src={expert?.avatar}
-              alt="Avatar"
-              width={200}
-              height={200}
-              className="h-[80px] w-[80px] rounded-full object-cover animate-pulse"
-            />
-            <h2 className="text-gray-500">{expert?.name} </h2>
+            {expert ? (
+              <Image
+                src={expert.avatar}
+                alt="Avatar"
+                width={200}
+                height={200}
+                className="h-[80px] w-[80px] rounded-full object-cover animate-pulse"
+              />
+            ) : (
+              <div className="h-[80px] w-[80px] rounded-full bg-gray-300 animate-pulse"></div>
+            )}
+            <h2 className="text-gray-500">{expert?.name || "Loading..."} </h2>
             <div className="p-5 bg-gray-200 px-10 rounded-lg absolute bottom-10 right-10">
               <UserButton disabled />
             </div>

@@ -8,19 +8,25 @@ function AuthProvider({ children }) {
   const user = useUser();
   const CreateUser = useMutation(api.users.CreateUser);
   const [userData, setUserData] = useState();
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
-    console.log(user);
-    user && CreateNewUser();
+    setIsClient(true);
+    if (user) {
+      CreateNewUser();
+    }
   }, [user]);
 
   const CreateNewUser = async () => {
-    const result = await CreateUser({
-      name: user?.displayName || user?.primaryEmail?.split("@")[0] || "User",
-      email: user?.primaryEmail,
-    });
-    console.log(result);
-    setUserData(result);
+    try {
+      const result = await CreateUser({
+        name: user?.displayName || user?.primaryEmail?.split("@")[0] || "User",
+        email: user?.primaryEmail,
+      });
+      setUserData(result);
+    } catch (error) {
+      console.error("Error creating user:", error);
+    }
   };
 
   return (
