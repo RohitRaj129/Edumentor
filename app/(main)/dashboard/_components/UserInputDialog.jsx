@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import {
   Dialog,
   DialogClose,
@@ -16,6 +16,7 @@ import { useMutation } from "convex/react";
 import { api } from "@/convex/_generated/api";
 import { LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { UserContext } from "@/app/_context/UserContext";
 
 function UserInputDialog({ children, coachingOption }) {
   const [selectedExpert, setSelectedExpert] = useState();
@@ -24,6 +25,7 @@ function UserInputDialog({ children, coachingOption }) {
   const [loading, setLoading] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
   const router = useRouter();
+  const { userData } = useContext(UserContext);
 
   const OnClickNext = async () => {
     setLoading(true);
@@ -31,6 +33,7 @@ function UserInputDialog({ children, coachingOption }) {
       topic: topic,
       coachingOption: coachingOption?.name,
       expertName: selectedExpert,
+      uid: userData?._id,
     });
     console.log(result);
     setLoading(false);
