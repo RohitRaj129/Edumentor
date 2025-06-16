@@ -37,13 +37,13 @@ export default function Home() {
       <section className="flex flex-col items-center justify-center text-center px-6 md:px-10 py-16 md:py-24 mt-8">
         {/* Magic UI Badge */}
         <div className="mb-10">
-          <div className="inline-flex items-center rounded-full bg-[#FDF7F2]/80 px-3 py-1 text-sm border border-[#f3e6da]">
+          {/* <div className="inline-flex items-center rounded-full bg-[#FDF7F2]/80 px-3 py-1 text-sm border border-[#f3e6da]">
             <span className="mr-1">🪄</span>
             <span className="text-[#E9A87C] font-medium">
               Introducing Magic UI
             </span>
             <span className="ml-1">→</span>
-          </div>
+          </div> */}
         </div>
 
         {/* Main Heading */}
