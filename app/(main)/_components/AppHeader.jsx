@@ -9,7 +9,7 @@ function AppHeader() {
       <Link href={"/"}>
         <Image src={"/logo.svg"} alt="logo" width={160} height={200} />
       </Link>
-      <UserButton />
+      <UserButton fallbackImageUrl="/t1.avif" />
     </div>
   );
 }

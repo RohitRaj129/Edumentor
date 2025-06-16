@@ -268,7 +268,7 @@ function DiscussionRoom() {
             )}
             <h2 className="text-gray-500">{expert?.name || "Loading..."} </h2>
             <div className="p-5 bg-gray-200 px-10 rounded-lg absolute bottom-10 right-10">
-              <UserButton disabled />
+              <UserButton fallbackImageUrl="/t1.avif" disabled />
             </div>
           </div>
           <div className="mt-5 flex items-center justify-center">

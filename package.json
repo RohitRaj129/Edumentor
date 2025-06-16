@@ -18,7 +18,7 @@
     "axios": "^1.8.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "convex": "^1.23.0",
+    "convex": "^1.24.8",
     "dotenv": "^16.5.0",
     "elevenlabs": "^1.59.0",
     "formidable": "^3.5.4",
